@@ -4,6 +4,8 @@
 #include <TCanvas.h>
 #include <TVirtualPad.h>
 
+R__ADD_INCLUDE_PATH(/home/lasitha/EVIO/evio/Linux-x86_64/include)
+R__LOAD_LIBRARY(/home/lasitha/EVIO/evio/Linux-x86_64/lib/libevio.so)
 R__LOAD_LIBRARY(/home/lasitha/MyFiles/Root/proj2-SDK/install/lib/libV1720.so)
 
 #include "V1720FileSetup.h"

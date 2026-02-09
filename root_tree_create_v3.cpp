@@ -10,12 +10,9 @@ program for opening and reading * * an existing CODA event format file.
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "evio.h"
-#include "TSystem.h"
-#include "TTree.h"
-#include "TCanvas.h"
-#include "TFile.h"
-#include "TRandom.h"
+#include <evio.h>
+#include <TTree.h>
+#include <TFile.h>
 
 #define MAX_BLOCK_SIZE 255
 #define MAX_ROCS       255

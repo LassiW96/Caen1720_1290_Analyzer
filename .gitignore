@@ -1,4 +1,8 @@
 build/
 install/
 .vscode/
-NotesOnthisProject.txt
+NotesOnThisProject.txt
+
+# Data files
+*.root
+*.evio.*

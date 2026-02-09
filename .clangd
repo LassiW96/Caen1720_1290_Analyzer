@@ -2,3 +2,4 @@ CompileFlags:
   CompilationDatabase: build
   Add:
     - -I/opt/root/include
+    - -I/home/lasitha/EVIO/evio/Linux-x86_64/include

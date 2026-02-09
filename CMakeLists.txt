@@ -8,18 +8,20 @@ project(${PACKAGE} CXX)
 # Find the ROOT package [1, 2]
 find_package(ROOT REQUIRED)
 
-# set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-# set(CMAKE_BUILD_RPATH "${CMAKE_BINARY_DIR}")
-# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
-# Include ROOT macros if using an older version (typically 6.16 or earlier) [3]
-# find_package(ROOT) generally includes these automatically in modern versions.
-# include("${ROOT_DIR}/modules/RootNewMacros.cmake")
+# Set EVIO path
+set(EVIO_ROOT $ENV{HOME}/EVIO/evio/Linux-x86_64)
+set(EVIO_INCLUDE_DIR ${EVIO_ROOT}/include)
+set(EVIO_LIBRARY ${EVIO_ROOT}/lib/libevio.so)
 
 # Specify headers and source files [4, 5]
-set(HEADERS "V1720FileSetup.h")
-set(SOURCES "V1720FileSetup.cxx")
+set(HEADERS 
+        "V1720FileSetup.h" 
+        "V1720EvioDecode.h")
+set(SOURCES 
+        "V1720FileSetup.cxx" 
+        "V1720EvioDecode.cxx")
 
 # 1. Create the shared library target [1, 5, 6]
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
@@ -36,8 +38,13 @@ ROOT_GENERATE_DICTIONARY(
 
 # 3. Configure includes and link against ROOT libraries [1, 9, 11]
 # target_include_directories ensures rootcling finds headers during the build [1]
-target_include_directories(${PACKAGE} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${PACKAGE} PUBLIC ROOT::Core ROOT::RIO)
+target_include_directories(${PACKAGE} PUBLIC 
+                                ${CMAKE_CURRENT_SOURCE_DIR} 
+                                ${EVIO_INCLUDE_DIR})
+target_link_libraries(${PACKAGE} PUBLIC 
+                                ROOT::Core 
+                                ROOT::RIO 
+                                ${EVIO_LIBRARY})
 
 # 4. Install artifacts [12, 13]
 # You must install the .so, .rootmap, and .pcm files together for ROOT to load them [14, 15]
