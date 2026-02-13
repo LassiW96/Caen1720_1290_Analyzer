@@ -1,6 +1,7 @@
 build/
 install/
 .vscode/
+.clangd
 NotesOnThisProject.txt
 
 # Data files
@@ -8,4 +9,5 @@ NotesOnThisProject.txt
 *.evio.*
 
 
+*.sh
 *.png

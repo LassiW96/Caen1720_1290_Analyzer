@@ -14,7 +14,7 @@ R__LOAD_LIBRARY(/home/lasitha/MyFiles/Root/proj2-SDK/install/lib/libV1720.so)
 using namespace std;
 
 void testEvio() {
-    const string evioFile = "ADCTest_1099.evio.0";
+    const string evioFile = "ADCTest_1102.evio.0";
     V1720EvioDecode decoder(evioFile);
     decoder.decode();
 }
