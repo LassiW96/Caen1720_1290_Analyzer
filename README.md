@@ -10,14 +10,14 @@ This project provides a **shared library** to convert **Caen V1720 CODA output**
 ## Prerequisites
 Before building, make sure you have:
 
-- [ROOT](https://root.cern/) version **6.36** or higher  
+- [ROOT](https://root.cern/) version **6.36** or higher (may not work if root was installed via snap) 
 - [CMake](https://cmake.org/) version **3.9** or higher  
 - [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version **4**
 
 ## Important Notes
 While configuring the project with CMake, you **must** provide:
 
-- **EVIO path:**  
+- **EVIO path (path to your evio headers and libraries):**  
   ```bash
   -DEVIO_ROOT=path/to/evio
 
