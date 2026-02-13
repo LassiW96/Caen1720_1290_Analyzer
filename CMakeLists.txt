@@ -25,12 +25,10 @@ set(EVIO_LIBRARIES
             ${EVIO_ROOT}/lib/libevio.so)
 
 # Specify headers and source files [4, 5]
-set(HEADERS 
-        "V1720FileSetup.h" 
+set(HEADERS  
         "V1720EvioDecode.h"
         "V1720RootFileSetup.h")
 set(SOURCES 
-        "V1720FileSetup.cxx" 
         "V1720EvioDecode.cxx"
         "V1720RootFileSetup.cxx")
 

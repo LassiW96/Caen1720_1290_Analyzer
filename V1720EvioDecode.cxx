@@ -16,6 +16,10 @@ V1720EvioDecode::V1720EvioDecode(const string& eviofile) :
     tbank.start = nullptr;
     tbank.evTS = nullptr;
     tbank.evType = nullptr;
+    
+    if (!std::filesystem::exists(m_evioFile)) {
+        throw std::runtime_error("Input EVIO file does not exist: " + m_evioFile);
+    }
 
     filesystem::path p(m_evioFile);
     while (p.has_extension()) {
