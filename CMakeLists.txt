@@ -11,7 +11,14 @@ find_package(ROOT REQUIRED)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set EVIO path
-set(EVIO_ROOT $ENV{HOME}/EVIO/evio/Linux-x86_64)
+#set(EVIO_ROOT $ENV{HOME}/EVIO/evio/Linux-x86_64)
+set(EVIO_ROOT "" CACHE PATH "Path to EVIO installation")
+
+if(NOT EVIO_ROOT)
+    message(FATAL_ERROR "EVIO_ROOT not set. Use -DEVIO_ROOT=/path/to/evio")
+endif()
+
+message(STATUS "Using EVIO from: ${EVIO_ROOT}")
 set(EVIO_INCLUDE_DIR ${EVIO_ROOT}/include)
 set(EVIO_LIBRARIES 
             ${EVIO_ROOT}/lib/libeviocc.so

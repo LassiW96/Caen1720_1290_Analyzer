@@ -1,8 +1,11 @@
 #include "V1720EvioDecode.h"
 
 #include <Rtypes.h>
+#include <RtypesCore.h>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -14,7 +17,13 @@ V1720EvioDecode::V1720EvioDecode(const string& eviofile) :
     tbank.evTS = nullptr;
     tbank.evType = nullptr;
 
-    m_rootFileSetup = make_unique<V1720RootFileSetup>("outputv6.root", "t1", m_numSamples);
+    filesystem::path p(m_evioFile);
+    while (p.has_extension()) {
+    p = p.stem();
+    }
+    string outputFileName = p.string() + "_decoded.root";
+
+    m_rootFileSetup = make_unique<V1720RootFileSetup>(outputFileName, "t1", m_numChannels, m_numSamples);
 }
 
 void V1720EvioDecode::decode() 
@@ -31,9 +40,7 @@ void V1720EvioDecode::decode()
     uint32_t bufLen = 0;
     int buffer_count = 0;
 
-    m_rootFileSetup->setupBranches("ch1", "ch2");
-    m_rootFileSetup->m_ch1.resize(m_numSamples);
-    m_rootFileSetup->m_ch2.resize(m_numSamples);
+    m_rootFileSetup->setupBranches();
 
     while (evReadAlloc(handle, &buf, &bufLen) !=EOF)
     {
@@ -48,7 +55,7 @@ void V1720EvioDecode::decode()
 
         if (!adcPayload) {
             cout << "Event " << buffer_count
-                 << ": CAEN 1720 bank not found" << endl;
+                 << ": Not a Payload Bank" << endl;
             free(buf);
             continue;
         }
@@ -62,26 +69,64 @@ void V1720EvioDecode::decode()
         int firsthalf = dataStart + nData / 2;
 
         // ---- First half → ch1 ----
+        auto& ch0 = m_rootFileSetup->m_event.channels[0];
+        Float_t integral0 = 0;
+        Float_t peak0 = 1e9;
+        Float_t peakIdx0 = 0;
+
         for (int i = dataStart; i < firsthalf; i++) {
             uint32_t w = tbank.start[i];
             uint16_t low  = w & 0xffff;
             uint16_t high = (w >> 16) & 0xffff;
 
             int idx = (i - dataStart) * 2;
-            m_rootFileSetup->m_ch1[idx] = static_cast<Float_t>(low);
-            m_rootFileSetup->m_ch1[idx + 1] = static_cast<Float_t>(high);
+            Float_t sample0 = static_cast<Float_t>(low);
+            Float_t sample1 = static_cast<Float_t>(high);
+            ch0.samples[idx] = sample0;
+            ch0.samples[idx + 1] = sample1; 
+            integral0 += sample0 + sample1;
+            if (sample0 < peak0) {
+                peak0 = sample0;
+                peakIdx0 = idx;
+            }
+            if (sample1 < peak0) {
+                peak0 = sample1;
+                peakIdx0 = idx + 1;
+            }
         }
+        ch0.integral = integral0;
+        ch0.peak = peak0;
+        ch0.peakIdx = peakIdx0;
 
         // ---- Second half → ch2 ----
+            
+        auto& ch1 = m_rootFileSetup->m_event.channels[1];
+        Float_t integral1 = 0;
+        Float_t peak1 = 1e9;
+        Float_t peakIdx1 = 0;
         for (int i = firsthalf; i < dataStart + nData; i++) {
             uint32_t w = tbank.start[i];
             uint16_t low  = w & 0xffff;
             uint16_t high = (w >> 16) & 0xffff;
 
             int idx = (i - firsthalf) * 2;
-            m_rootFileSetup->m_ch2[idx] = static_cast<Float_t>(low);
-            m_rootFileSetup->m_ch2[idx + 1] = static_cast<Float_t>(high);
+            ch1.samples[idx] = static_cast<Float_t>(low);
+            ch1.samples[idx + 1] = static_cast<Float_t>(high);
+            Float_t sample0 = static_cast<Float_t>(low);
+            Float_t sample1 = static_cast<Float_t>(high);
+            integral1 += low + high;
+            if (sample0 < peak1) {
+                peak1 = sample0;
+                peakIdx1 = idx;
+            }
+            if (sample1 < peak1) {
+                peak1 = sample1;
+                peakIdx1 = idx + 1;
+            }
         }
+        ch1.integral = integral1;
+        ch1.peak = peak1;
+        ch1.peakIdx = peakIdx1;
 
         m_rootFileSetup->m_tree->Fill();
 
@@ -91,8 +136,10 @@ void V1720EvioDecode::decode()
     m_rootFileSetup->m_tree->Write("", TObject::kOverwrite);
     m_rootFileSetup->m_file->Close();
     evClose(handle);
-    cout << "Blocks processed: " << tbank.blksize << endl;
+
+    cout << "\nFinished processing file: " << m_evioFile << endl;
     cout << "Total buffers processed: " << buffer_count << endl;
+    cout << "-----------------------------------------------------\n" << endl;
 }
 
 int V1720EvioDecode::trigBankDecode(uint32_t *tb, int blkSize)

@@ -2,6 +2,7 @@
 #define V1720EVIODECODE_H
 
 #include "Rtypes.h"
+#include <RtypesCore.h>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -41,6 +42,9 @@ private:
     std::string m_evioFile;
 
     std::unique_ptr<V1720RootFileSetup> m_rootFileSetup;
+
+    // Hard coded for now, can be made configurable later
+    Int_t m_numChannels = 2; // default, can be set via constructor or other method
     Int_t m_numSamples = 4096; // default, can be set via constructor or other method
 
     ClassDef(V1720EvioDecode, 1)
