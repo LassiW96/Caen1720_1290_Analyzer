@@ -13,15 +13,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set EVIO path
 set(EVIO_ROOT $ENV{HOME}/EVIO/evio/Linux-x86_64)
 set(EVIO_INCLUDE_DIR ${EVIO_ROOT}/include)
-set(EVIO_LIBRARY ${EVIO_ROOT}/lib/libevio.so)
+set(EVIO_LIBRARIES 
+            ${EVIO_ROOT}/lib/libeviocc.so
+            ${EVIO_ROOT}/lib/libevio.so)
 
 # Specify headers and source files [4, 5]
 set(HEADERS 
         "V1720FileSetup.h" 
-        "V1720EvioDecode.h")
+        "V1720EvioDecode.h"
+        "V1720RootFileSetup.h")
 set(SOURCES 
         "V1720FileSetup.cxx" 
-        "V1720EvioDecode.cxx")
+        "V1720EvioDecode.cxx"
+        "V1720RootFileSetup.cxx")
 
 # 1. Create the shared library target [1, 5, 6]
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
@@ -44,7 +48,8 @@ target_include_directories(${PACKAGE} PUBLIC
 target_link_libraries(${PACKAGE} PUBLIC 
                                 ROOT::Core 
                                 ROOT::RIO 
-                                ${EVIO_LIBRARY})
+                                ROOT::Tree
+                                ${EVIO_LIBRARIES})
 
 # 4. Install artifacts [12, 13]
 # You must install the .so, .rootmap, and .pcm files together for ROOT to load them [14, 15]

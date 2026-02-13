@@ -1,16 +1,20 @@
 #include "V1720EvioDecode.h"
 
 #include <Rtypes.h>
+#include <cstdint>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
 V1720EvioDecode::V1720EvioDecode(const string& eviofile) : 
-    m_evioFile(eviofile), m_ch1(), m_ch2()
+    m_evioFile(eviofile), m_rootFileSetup(nullptr)
 {
     tbank.start = nullptr;
     tbank.evTS = nullptr;
     tbank.evType = nullptr;
+
+    m_rootFileSetup = make_unique<V1720RootFileSetup>("outputv6.root", "t1", m_numSamples);
 }
 
 void V1720EvioDecode::decode() 
@@ -26,6 +30,10 @@ void V1720EvioDecode::decode()
     uint32_t *buf = nullptr;
     uint32_t bufLen = 0;
     int buffer_count = 0;
+
+    m_rootFileSetup->setupBranches("ch1", "ch2");
+    m_rootFileSetup->m_ch1.resize(m_numSamples);
+    m_rootFileSetup->m_ch2.resize(m_numSamples);
 
     while (evReadAlloc(handle, &buf, &bufLen) !=EOF)
     {
@@ -53,9 +61,6 @@ void V1720EvioDecode::decode()
         int nData    = numWords - dataStart;  // waveform words only
         int firsthalf = dataStart + nData / 2;
 
-        m_ch1.resize(nData);
-        m_ch2.resize(nData);
-
         // ---- First half → ch1 ----
         for (int i = dataStart; i < firsthalf; i++) {
             uint32_t w = tbank.start[i];
@@ -63,8 +68,8 @@ void V1720EvioDecode::decode()
             uint16_t high = (w >> 16) & 0xffff;
 
             int idx = (i - dataStart) * 2;
-            m_ch1[idx]     = low;
-            m_ch1[idx + 1] = high;
+            m_rootFileSetup->m_ch1[idx] = static_cast<Float_t>(low);
+            m_rootFileSetup->m_ch1[idx + 1] = static_cast<Float_t>(high);
         }
 
         // ---- Second half → ch2 ----
@@ -74,27 +79,20 @@ void V1720EvioDecode::decode()
             uint16_t high = (w >> 16) & 0xffff;
 
             int idx = (i - firsthalf) * 2;
-            m_ch2[idx]     = low;
-            m_ch2[idx + 1] = high;
+            m_rootFileSetup->m_ch2[idx] = static_cast<Float_t>(low);
+            m_rootFileSetup->m_ch2[idx + 1] = static_cast<Float_t>(high);
         }
+
+        m_rootFileSetup->m_tree->Fill();
 
         free(buf);
         buf = nullptr;
     }
+    m_rootFileSetup->m_tree->Write("", TObject::kOverwrite);
+    m_rootFileSetup->m_file->Close();
     evClose(handle);
+    cout << "Blocks processed: " << tbank.blksize << endl;
     cout << "Total buffers processed: " << buffer_count << endl;
-}
-
-vector<uint16_t> V1720EvioDecode::getChannelData(int channel) const
-{
-    if (channel == 1) {
-        return m_ch1;
-    } else if (channel == 2) {
-        return m_ch2;
-    } else {
-        cout << "Invalid channel number: " << channel << ". Valid channels are 1 and 2." << endl;
-        return {};
-    }
 }
 
 int V1720EvioDecode::trigBankDecode(uint32_t *tb, int blkSize)
@@ -160,5 +158,7 @@ uint32_t* V1720EvioDecode::findBank(uint32_t* ptr, uint32_t* end, uint16_t wante
     }
     return nullptr;
 }
+
+V1720EvioDecode::~V1720EvioDecode() = default;
 
 ClassImp(V1720EvioDecode)

@@ -3,9 +3,12 @@
 
 #include "Rtypes.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <evio.h>
-#include <vector>
+// #include <vector>
+
+#include "V1720RootFileSetup.h"
 
 typedef struct trigBankObject {
     int      blksize;              /* total number of triggers in the Bank */
@@ -24,12 +27,9 @@ typedef struct trigBankObject {
 class V1720EvioDecode {
 public:
     V1720EvioDecode(const std::string& eviofile);
-    ~V1720EvioDecode() = default;
+    ~V1720EvioDecode();
 
     void decode();
-
-    // Getter for channel data
-    std::vector<uint16_t> getChannelData(int channel) const;
 
 private:
     TBOBJ tbank;
@@ -39,8 +39,9 @@ private:
 
     // Members
     std::string m_evioFile;
-    std::vector<uint16_t> m_ch1;
-    std::vector<uint16_t> m_ch2;
+
+    std::unique_ptr<V1720RootFileSetup> m_rootFileSetup;
+    Int_t m_numSamples = 4096; // default, can be set via constructor or other method
 
     ClassDef(V1720EvioDecode, 1)
 };

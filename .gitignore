@@ -6,3 +6,6 @@ NotesOnThisProject.txt
 # Data files
 *.root
 *.evio.*
+
+
+*.png
