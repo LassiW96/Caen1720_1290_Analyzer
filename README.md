@@ -27,19 +27,19 @@ While configuring the project with CMake, you **must** provide:
 
 ## Building
 - Clone the repo in a fresh directory:
- ```bash
- git clone https://github.com/LassiW96/V1720ADCAnalyzer.git
+    ```bash
+    git clone https://github.com/LassiW96/V1720ADCAnalyzer.git
 
 - Use the following commands to build and install the library:
- ```bash
- mkdir build && cd build
- cmake .. -DEVIO_ROOT=path/to/evio -DCMAKE_INSTALL_PREFIX=install/path
- make -j$(nproc)
- make install
+    ```bash
+    mkdir build && cd build
+    cmake .. -DEVIO_ROOT=path/to/evio -DCMAKE_INSTALL_PREFIX=install/path
+    make -j$(nproc)
+    make install
 
 ## Using the shared library:
 - Once the library is generated, it can be used in a root script by simply loading it in the very top of the script as follows:
- ```bash
- R__LOAD_LIBRARY({CMAKE_INSTALL_PREFIX}/lib/libV1720.so)
+    ```bash
+    R__LOAD_LIBRARY({CMAKE_INSTALL_PREFIX}/lib/libV1720.so)
 
 - There is a sample root script in the repo (testEvio.cpp) take that as a guide
