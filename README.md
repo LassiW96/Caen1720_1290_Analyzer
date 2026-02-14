@@ -1,7 +1,7 @@
-# Shared Library to Create a ROOT File from CaenV1720 CODA Output
+# Shared Library to Create a ROOT File from CaenV1720 CODA Output (for LaTech CAPS)
 
 [![CMake](https://img.shields.io/badge/CMake-3.9%2B-blue.svg)](https://cmake.org/)  
-[![ROOT](https://img.shields.io/badge/ROOT-6.36%2B-orange.svg)](https://root.cern/)  
+[![ROOT](https://img.shields.io/badge/ROOT-6.30%2B-orange.svg)](https://root.cern/)  
 [![EVIO](https://img.shields.io/badge/EVIO-v4-green.svg)](https://github.com/codaclub/evio)
 
 ## Overview
@@ -10,7 +10,7 @@ This project provides a **shared library** to convert **Caen V1720 CODA output**
 ## Prerequisites
 Before building, make sure you have:
 
-- [ROOT](https://root.cern/) version **6.36** or higher (may not work if root was installed via snap) 
+- [ROOT](https://root.cern/) version **6.30** or higher (may not work if root was installed via snap) 
 - [CMake](https://cmake.org/) version **3.9** or higher  
 - [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version **4**
 
@@ -42,4 +42,4 @@ While configuring the project with CMake, you **must** provide:
     ```bash
     R__LOAD_LIBRARY({CMAKE_INSTALL_PREFIX}/lib/libV1720.so)
 
-- There is a sample root script in the repo (testEvio.cpp) take that as a guide
+- There is a sample root script in the repo (testEvio.cpp) take that as a guide.

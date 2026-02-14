@@ -10,7 +10,7 @@
 
 using namespace std;
 
-V1720EvioDecode::V1720EvioDecode(const string& eviofile) : 
+V1720EvioDecode::V1720EvioDecode(const string& eviofile, const string& outputdir) : 
     m_evioFile(eviofile), m_rootFileSetup(nullptr)
 {
     tbank.start = nullptr;
@@ -27,7 +27,19 @@ V1720EvioDecode::V1720EvioDecode(const string& eviofile) :
     }
     string outputFileName = p.string() + "_decoded.root";
 
-    m_rootFileSetup = make_unique<V1720RootFileSetup>(outputFileName, "t1", m_numChannels, m_numSamples);
+    std::filesystem::path fullOutputPath;
+
+    if (outputdir.empty()) {
+        fullOutputPath = outputFileName;  // same directory as executable
+    } else {
+        fullOutputPath = std::filesystem::path(outputdir) / outputFileName;
+        std::filesystem::create_directories(fullOutputPath.parent_path());
+    }
+
+    m_rootFileSetup = make_unique<V1720RootFileSetup>(fullOutputPath.string(), 
+            "t1", 
+            m_numChannels, 
+            m_numSamples);
 }
 
 void V1720EvioDecode::decode() 

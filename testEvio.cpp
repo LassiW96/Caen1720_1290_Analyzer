@@ -11,7 +11,12 @@ R__LOAD_LIBRARY({CMAKE_INSTALL_PREFIX}/lib/libV1720.so)
 using namespace std;
 
 void testEvio() {
-    const string evioFile = "example.evio.0";
-    V1720EvioDecode decoder(evioFile);
+    const string evioFile = "path/to/example.evio.0";
+
+    // Optional: specify an output directory for the ROOT file, if not provided, it will be
+    // created in the same directory as the project source
+    const string outputDir = "/path/to/output"; 
+    V1720EvioDecode decoder(evioFile, outputDir);
+
     decoder.decode();
 }
