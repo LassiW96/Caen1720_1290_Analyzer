@@ -1,4 +1,4 @@
-# Shared Library to Create a ROOT File from CaenV1720 CODA Output
+# Shared Library to Create a ROOT File from CaenV1720 CODA Output (for LaTech CAPS)
 
 [![CMake](https://img.shields.io/badge/CMake-3.9%2B-blue.svg)](https://cmake.org/)  
 [![ROOT](https://img.shields.io/badge/ROOT-6.30%2B-orange.svg)](https://root.cern/)  
