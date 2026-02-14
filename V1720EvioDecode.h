@@ -27,7 +27,7 @@ typedef struct trigBankObject {
 
 class V1720EvioDecode {
 public:
-    V1720EvioDecode(const std::string& eviofile);
+    V1720EvioDecode(const std::string& eviofile, const std::string& outputdir = "");
     ~V1720EvioDecode();
 
     void decode();

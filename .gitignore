@@ -1,5 +1,6 @@
 build/
 install/
+output/
 .vscode/
 .clangd
 NotesOnThisProject.txt
