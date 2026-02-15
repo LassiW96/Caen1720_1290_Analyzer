@@ -15,7 +15,7 @@ void testEvio() {
 
     // Optional: specify an output directory for the ROOT file, if not provided, it will be
     // created in the same directory as the project source
-    const string outputDir = "/path/to/output"; 
+    const string outputDir = "path/to/output"; 
     V1720EvioDecode decoder(evioFile, outputDir);
 
     decoder.decode();

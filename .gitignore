@@ -4,6 +4,8 @@ output/
 .vscode/
 .clangd
 NotesOnThisProject.txt
+CMakeLists_old.txt
+testEviov2.cpp
 
 # Data files
 *.root

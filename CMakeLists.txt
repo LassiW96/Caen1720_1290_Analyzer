@@ -1,73 +1,104 @@
-# Set minimum CMake version [1]
 cmake_minimum_required(VERSION 3.9)
 
-# Define the project and package name [1]
-set(PACKAGE "V1720")
-project(${PACKAGE} CXX)
+project(V1720 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Find the ROOT package
-find_package(ROOT REQUIRED)
+# -----------------------------
+# ROOT
+# -----------------------------
+find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
 
-# Set EVIO path
-#set(EVIO_ROOT $ENV{HOME}/EVIO/evio/Linux-x86_64)
+# -----------------------------
+# EVIO Handling
+# -----------------------------
 set(EVIO_ROOT "" CACHE PATH "Path to EVIO installation")
 
-if(NOT EVIO_ROOT)
-    message(FATAL_ERROR "EVIO_ROOT not set. Use -DEVIO_ROOT=/path/to/evio")
+if(EVIO_ROOT)
+
+    message(STATUS "Using system EVIO from: ${EVIO_ROOT}")
+
+    add_library(evio SHARED IMPORTED)
+
+    set_target_properties(evio PROPERTIES
+        IMPORTED_LOCATION ${EVIO_ROOT}/lib/libevio.so
+        INTERFACE_INCLUDE_DIRECTORIES ${EVIO_ROOT}/include
+    )
+
+else()
+
+    message(STATUS "Fetching and building EVIO locally")
+
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FetchBuildEVIO.cmake)
+
 endif()
 
-message(STATUS "Using EVIO from: ${EVIO_ROOT}")
-set(EVIO_INCLUDE_DIR ${EVIO_ROOT}/include)
-set(EVIO_LIBRARIES 
-            ${EVIO_ROOT}/lib/libevio.so)
-
-# Specify headers and source files
-set(HEADERS  
-        "V1720EvioDecode.h"
-        "V1720RootFileSetup.h")
-set(SOURCES 
-        "V1720EvioDecode.cxx"
-        "V1720RootFileSetup.cxx")
-
-# Create the shared library target [1, 5, 6]
-add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
-
-# target_include_directories ensures rootcling finds headers during the build
-target_include_directories(${PACKAGE} PUBLIC 
-                                ${CMAKE_CURRENT_SOURCE_DIR} 
-                                ${EVIO_INCLUDE_DIR})
-
-# Generate the ROOT dictionary
-# The MODULE option attaches the dictionary to our existing library target
-# The LinkDef file naming follows your requirements
-ROOT_GENERATE_DICTIONARY(
-    ${PACKAGE}Dict
-    ${HEADERS} 
-    MODULE ${PACKAGE} 
-    LINKDEF ${PACKAGE}_LinkDef.h
+# -----------------------------
+# Library Sources
+# -----------------------------
+set(HEADERS
+    V1720EvioDecode.h
+    V1720RootFileSetup.h
 )
 
+set(SOURCES
+    V1720EvioDecode.cxx
+    V1720RootFileSetup.cxx
+)
 
-target_link_libraries(${PACKAGE} PUBLIC 
-                                ROOT::Core 
-                                ROOT::RIO 
-                                ROOT::Tree
-                                ${EVIO_LIBRARIES})
+add_library(V1720 SHARED ${SOURCES} ${HEADERS})
 
-# Install artifacts
-# You must install the .so, .rootmap, and .pcm files together for ROOT to load them
-install(TARGETS ${PACKAGE} DESTINATION lib/)
+target_include_directories(V1720 PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# For ROOT 6, PCM and rootmap files must stay in the same directory as the library
-if (${ROOT_VERSION} VERSION_GREATER_EQUAL 6.0)
-    install(FILES 
-        "${CMAKE_CURRENT_BINARY_DIR}/lib${PACKAGE}_rdict.pcm"
-        "${CMAKE_CURRENT_BINARY_DIR}/lib${PACKAGE}.rootmap"
-        DESTINATION lib/
+# -----------------------------
+# ROOT Dictionary
+# -----------------------------
+ROOT_GENERATE_DICTIONARY(
+    V1720Dict
+    ${HEADERS}
+    MODULE V1720
+    LINKDEF V1720_LinkDef.h
+)
+
+# -----------------------------
+# Link Libraries
+# -----------------------------
+target_link_libraries(V1720 PUBLIC
+    ROOT::Core
+    ROOT::RIO
+    ROOT::Tree
+    evio
+)
+
+# -----------------------------
+# RPATH (Critical Part)
+# -----------------------------
+
+# During build → find local EVIO
+set_target_properties(V1720 PROPERTIES
+    BUILD_RPATH_USE_ORIGIN TRUE
+)
+
+# After install → look in same directory as the library
+set_target_properties(V1720 PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
+)
+
+# -----------------------------
+# Install
+# -----------------------------
+install(TARGETS V1720
+    LIBRARY DESTINATION lib
+)
+
+if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/libV1720_rdict.pcm"
+        "${CMAKE_CURRENT_BINARY_DIR}/libV1720.rootmap"
+        DESTINATION lib
     )
 endif()
