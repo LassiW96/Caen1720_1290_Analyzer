@@ -1,6 +1,6 @@
-# Shared Library to Create a ROOT File from CaenV1720 CODA Output
+# Shared Library to Create a ROOT File from CaenV1720 CODA Output (for LaTech CAPS)
 
-[![CMake](https://img.shields.io/badge/CMake-3.9%2B-blue.svg)](https://cmake.org/)  
+[![CMake](https://img.shields.io/badge/CMake-3.11%2B-blue.svg)](https://cmake.org/)  
 [![ROOT](https://img.shields.io/badge/ROOT-6.30%2B-orange.svg)](https://root.cern/)  
 [![EVIO](https://img.shields.io/badge/EVIO-v4-green.svg)](https://github.com/codaclub/evio)
 
@@ -11,15 +11,17 @@ This project provides a **shared library** to convert **Caen V1720 CODA output**
 Before building, make sure you have:
 
 - [ROOT](https://root.cern/) version **6.30** or higher (may not work if root was installed via snap) 
-- [CMake](https://cmake.org/) version **3.9** or higher  
-- [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version **4**
+- [CMake](https://cmake.org/) version **3.11** or higher  
+- [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version **4** (optional - if not, evio will be downloaded and built)
 
 ## Important Notes
-While configuring the project with CMake, you **must** provide:
+While configuring the project with CMake, provide:
 
-- **EVIO path (path to your evio headers and libraries):**  
+- **If EVIO is already installed path (path to your evio headers and libraries):**  
   ```bash
   -DEVIO_ROOT=path/to/evio
+
+  If This variable is not provided, evio will be downloaded and built automatically within the project.
 
 - **Install path (shared library will be here):**  
   ```bash
@@ -33,7 +35,7 @@ While configuring the project with CMake, you **must** provide:
 - Use the following commands to build and install the library:
     ```bash
     mkdir build && cd build
-    cmake .. -DEVIO_ROOT=path/to/evio -DCMAKE_INSTALL_PREFIX=install/path
+    cmake .. -DEVIO_ROOT=path/to/evio(optional) -DCMAKE_INSTALL_PREFIX=install/path
     make -j$(nproc)
     make install
 
