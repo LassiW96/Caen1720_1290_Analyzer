@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # -----------------------------
 # ROOT
 # -----------------------------
-find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
+find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist Gpad Graf)
 
 # -----------------------------
 # EVIO Handling
@@ -95,6 +95,7 @@ install(TARGETS V1720
     LIBRARY DESTINATION lib
 )
 
+
 if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
     install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/libV1720_rdict.pcm"
@@ -102,3 +103,44 @@ if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
         DESTINATION lib
     )
 endif()
+
+# -----------------------------
+# GUI Application
+# -----------------------------
+# dynamic qt fetch
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrInstallQt6.cmake)
+
+set(GUI_SOURCES
+    src/gui/main.cpp
+    src/gui/MainWindow.cpp
+)
+
+set(GUI_HEADERS
+    src/gui/MainWindow.h
+)
+
+add_executable(V1720GUI ${GUI_SOURCES} ${GUI_HEADERS})
+
+target_link_libraries(V1720GUI PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    V1720
+    ROOT::Core
+    ROOT::RIO
+    ROOT::Tree
+    ROOT::Hist
+    ROOT::Gpad
+    ROOT::Graf
+)
+
+# Enable MOC processing
+set_target_properties(V1720GUI PROPERTIES
+    AUTOMOC ON
+    AUTOUIC ON
+    AUTORCC ON
+)
+
+install(TARGETS V1720GUI
+    RUNTIME DESTINATION bin
+)
