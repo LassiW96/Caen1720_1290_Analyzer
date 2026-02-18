@@ -130,22 +130,22 @@ void MainWindow::setupAnalysisTab() {
     QVBoxLayout *rightLayout = new QVBoxLayout(rightPanel);
     
     m_histList = new QListWidget();
+    m_histList->setMaximumHeight(120);
     connect(m_histList, &QListWidget::itemClicked, this, &MainWindow::onHistogramSelected);
     
     m_previewLabel = new QLabel("Select a histogram to preview");
     m_previewLabel->setAlignment(Qt::AlignCenter);
     m_previewLabel->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    m_previewLabel->setMinimumSize(400, 300);
-    // Scale contents
-    m_previewLabel->setScaledContents(true);
+    m_previewLabel->setMinimumSize(400, 450);
+    m_previewLabel->setScaledContents(false);
 
     QPushButton *openInteractiveBtn = new QPushButton("Open Interactive Canvas");
     connect(openInteractiveBtn, &QPushButton::clicked, this, &MainWindow::openInteractiveCanvas);
 
     rightLayout->addWidget(new QLabel("Histograms in File:"));
-    rightLayout->addWidget(m_histList);
+    rightLayout->addWidget(m_histList, 1);       // small stretch
     rightLayout->addWidget(new QLabel("Preview:"));
-    rightLayout->addWidget(m_previewLabel);
+    rightLayout->addWidget(m_previewLabel, 4);    // large stretch — dominates the space
     rightLayout->addWidget(openInteractiveBtn);
     
     // Adjust stretch

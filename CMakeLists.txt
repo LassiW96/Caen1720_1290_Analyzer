@@ -141,6 +141,12 @@ set_target_properties(V1720GUI PROPERTIES
     AUTORCC ON
 )
 
+# Preserve runtime library paths so the installed binary can find Qt6/ROOT/EVIO libs
+# even when they live in non-standard locations (e.g. /opt/Qt/...)
+set_target_properties(V1720GUI PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+
 install(TARGETS V1720GUI
     RUNTIME DESTINATION bin
 )

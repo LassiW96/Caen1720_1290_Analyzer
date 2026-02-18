@@ -10,7 +10,7 @@ void temp_analysis() {
    }
 
    // Pre-create the histogram so it is always accessible after Draw
-   TH1F *h = new TH1F("h_peak", "Channel 0 Peak Values;ADC Value;Counts", 100, 0, 16384);
+   TH1F *h = new TH1F("h_peak", "Channel 0 Peak Values;ADC Value;Counts", 100, 0, 3000);
 
    TCanvas *c = new TCanvas("c_ex", "Channel 0 Peak", 800, 600);
    c->cd();
