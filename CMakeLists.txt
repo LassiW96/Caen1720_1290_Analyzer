@@ -141,6 +141,11 @@ set_target_properties(V1720GUI PROPERTIES
     AUTORCC ON
 )
 
+# Embed the source-tree path so the binary can always locate resources/temp_script.C
+target_compile_definitions(V1720GUI PRIVATE
+    V1720_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 # Preserve runtime library paths so the installed binary can find Qt6/ROOT/EVIO libs
 # even when they live in non-standard locations (e.g. /opt/Qt/...)
 set_target_properties(V1720GUI PROPERTIES
@@ -149,4 +154,8 @@ set_target_properties(V1720GUI PROPERTIES
 
 install(TARGETS V1720GUI
     RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY resources/
+    DESTINATION share/V1720/resources
 )

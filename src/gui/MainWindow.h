@@ -51,6 +51,8 @@ private:
     
     // Internal state
     QString m_currentRootFile;
+    QString m_currentScriptPath;
+    QTimer *m_rootTimer;
 };
 
 #endif // MAINWINDOW_H

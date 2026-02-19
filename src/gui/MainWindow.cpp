@@ -26,6 +26,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("V1720 Decoding & Analysis UI");
     resize(1000, 700);
     setupUi();
+
+    // ROOT Event Loop Timer
+    m_rootTimer = new QTimer(this);
+    connect(m_rootTimer, &QTimer::timeout, this, []() {
+        gSystem->ProcessEvents();
+    });
+    m_rootTimer->start(100); // 100ms interval
 }
 
 MainWindow::~MainWindow() {
@@ -269,10 +276,15 @@ void MainWindow::onHistogramSelected(QListWidgetItem *item) {
     TH1 *h = (TH1*)f->Get(histName.toStdString().c_str());
     if (h) {
         gROOT->SetBatch(kTRUE);
+        // Delete previous preview canvas if it exists to avoid memory leak
+        TCanvas *oldC = (TCanvas*)gROOT->GetListOfCanvases()->FindObject("c_preview");
+        if (oldC) delete oldC;
+
         TCanvas *c = new TCanvas("c_preview", "Preview", 800, 600);
         h->Draw();
         c->SaveAs(tempImg.toStdString().c_str());
-        delete c;
+        // Do NOT delete c immediately, so "Open Interactive Canvas" can find it.
+        // It will be deleted by the next selection or script run.
         gROOT->SetBatch(kFALSE);
         
         QPixmap pix(tempImg);
@@ -284,19 +296,34 @@ void MainWindow::onHistogramSelected(QListWidgetItem *item) {
 }
 
 void MainWindow::openInteractiveCanvas() {
-    QList<QListWidgetItem*> items = m_histList->selectedItems();
-    if (items.isEmpty() || m_currentRootFile.isEmpty()) return;
-    
-    QString histName = items.first()->text();
-    
-    auto *f = new TFile(m_currentRootFile.toStdString().c_str(), "READ"); 
-    TH1 *h = (TH1*)f->Get(histName.toStdString().c_str());
-    if (h) {
-         h->SetDirectory(0);
-         TCanvas *c = new TCanvas("c_interactive", histName.toStdString().c_str(), 800, 600);
-         h->Draw();
-         c->Update();
+    // Find the last created canvas (this is our "active" one)
+    TCanvas *activeCanvas = nullptr;
+    TSeqCollection* canvases = gROOT->GetListOfCanvases();
+    if (canvases && canvases->GetEntries() > 0) {
+        activeCanvas = (TCanvas*)canvases->Last();
     }
+
+    if (!activeCanvas) {
+        m_logArea->append("No active canvas to open interactively.");
+        return;
+    }
+
+    m_logArea->append(QString("Opening canvas '%1' interactively...").arg(activeCanvas->GetName()));
+
+    // Temporarily disable batch mode to allow the new window to appear
+    bool wasBatch = gROOT->IsBatch();
+    gROOT->SetBatch(kFALSE);
+
+    // Create a NEW interactive canvas and copy the contents
+    QString newName = QString("%1_interactive").arg(activeCanvas->GetName());
+    TCanvas *interactiveC = new TCanvas(newName.toStdString().c_str(), 
+                                        activeCanvas->GetTitle(), 800, 600);
+    
+    // DrawClonePad copies everything from the active canvas to the new one
+    activeCanvas->DrawClonePad();
+    interactiveC->Update();
+
+    gROOT->SetBatch(wasBatch);
 }
 
 void MainWindow::loadAnalysisScript() {
@@ -305,6 +332,8 @@ void MainWindow::loadAnalysisScript() {
         QFile file(fileName);
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
              m_scriptEditor->setText(file.readAll());
+             m_currentScriptPath = fileName;
+             m_logArea->append("Loaded script from: " + fileName);
         }
     }
 }
@@ -313,25 +342,28 @@ void MainWindow::runAnalysisScript() {
     QString script = m_scriptEditor->toPlainText();
     if (script.isEmpty()) return;
 
-    // Save to temp file to run
-    QString tempScript = QDir::currentPath() + "/temp_analysis.C";
+    m_logArea->append("Running script...");
+
+    // Try to find a function name in the script
+    // Regex to match void function_name() or int function_name()
+    QRegularExpression re("(void|int)\\s+([a-zA-Z0-9_]+)\\s*\\(");
+    QRegularExpressionMatch match = re.match(script);
+    QString funcName;
+    if (match.hasMatch()) {
+        funcName = match.captured(2);
+        m_logArea->append(QString("Detected function: %1()").arg(funcName));
+    }
+
+    // Save to temp file
+    // To avoid ROOT warnings, the filename must match the function name if it exists
+    QString executionFileName = funcName.isEmpty() ? "temp_macro" : funcName;
+    QString tempScript = QDir::tempPath() + "/" + executionFileName + ".C";
+    
     QFile file(tempScript);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);
-
-        // If users provided a named function, it needs to match filename for simple .x execution
-        if (!script.contains("temp_analysis")) {
-             if (!script.contains("void ") && !script.contains("int ")) {
-                 out << "void temp_analysis() {\n" << script << "\n}\n";
-             } else {
-                 out << script;
-             }
-        } else {
-             out << script;
-        }
+        out << script;
         file.close();
-
-        m_logArea->append("Running script...");
 
         // Enable batch mode so ROOT renders to an offscreen canvas
         gROOT->SetBatch(kTRUE);
@@ -343,23 +375,29 @@ void MainWindow::runAnalysisScript() {
         }
 
         // Run the script via gROOT
+        // Using .x /path/to/file.C always works if filename matches function name
         gROOT->ProcessLine(QString(".x " + tempScript).toStdString().c_str());
 
-        // Capture the active canvas (created by the script) as a PNG for the preview
-        QString tempImg = QDir::tempPath() + "/v1720_script_preview.png";
-        TCanvas *activeCanvas = (TCanvas*)gROOT->GetListOfCanvases()->FindObject("c_ex");
+        // Capture the active canvas (created by the script) for the preview
+        // Instead of hardcoding "c_ex", we look for the last created canvas
+        TCanvas *activeCanvas = nullptr;
+        TSeqCollection* canvases = gROOT->GetListOfCanvases();
+        if (canvases && canvases->GetEntries() > 0) {
+            activeCanvas = (TCanvas*)canvases->Last();
+        }
+
         if (activeCanvas) {
+            QString tempImg = QDir::tempPath() + "/v1720_script_preview.png";
             activeCanvas->SaveAs(tempImg.toStdString().c_str());
             QPixmap pix(tempImg);
             if (!pix.isNull()) {
                 m_previewLabel->setPixmap(pix.scaled(
                     m_previewLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
-            // Clean up the canvas
-            delete activeCanvas;
+            // Do NOT delete activeCanvas immediately, so it can be opened interactively.
             m_logArea->append("Histogram rendered in preview.");
         } else {
-            m_logArea->append("Warning: No canvas 'c_ex' was produced by the script.");
+            m_logArea->append("Warning: No canvas was produced by the script.");
         }
 
         gROOT->SetBatch(kFALSE);
@@ -370,35 +408,46 @@ void MainWindow::runAnalysisScript() {
         }
 
         m_logArea->append("Script finished.");
+    } else {
+        m_logArea->append("Error: Failed to create temporary script file: " + tempScript);
     }
 }
 
 void MainWindow::loadExampleScript() {
-    // Search for resources/temp_script.C relative to the executable or source tree
+    // Build a prioritised list of candidate paths for resources/temp_script.C
     QStringList searchPaths;
     QString appDir = QCoreApplication::applicationDirPath();
-    searchPaths << appDir + "/../resources/temp_script.C"   // build/ -> source root
-                << appDir + "/resources/temp_script.C"       // installed layout
-                << QDir::currentPath() + "/resources/temp_script.C";
+
+    searchPaths << appDir + "/resources/temp_script.C"              // installed next to binary
+                << appDir + "/../resources/temp_script.C"           // build/ -> source root
+                << appDir + "/../share/V1720/resources/temp_script.C" // CMake install layout
+                << QDir::currentPath() + "/resources/temp_script.C"; // cwd = source root
+
+    // Compile-time fallback: source tree path baked in at build time
+#ifdef V1720_SOURCE_DIR
+    searchPaths << QString(V1720_SOURCE_DIR) + "/resources/temp_script.C";
+#endif
 
     QString scriptPath;
     for (const QString &path : searchPaths) {
         if (QFile::exists(path)) {
-            scriptPath = path;
+            scriptPath = QDir::cleanPath(path);
             break;
         }
     }
 
+    // Last resort: let the user locate the script manually
     if (scriptPath.isEmpty()) {
-        QMessageBox::warning(this, "Not Found",
-            "Could not locate resources/temp_script.C.\n"
-            "Searched relative to executable and working directory.");
-        return;
+        scriptPath = QFileDialog::getOpenFileName(
+            this, "Locate temp_script.C", QString(),
+            "ROOT Macros (*.C *.cxx);;All Files (*)");
+        if (scriptPath.isEmpty()) return;   // user cancelled
     }
 
     QFile file(scriptPath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         m_scriptEditor->setText(file.readAll());
+        m_currentScriptPath = scriptPath;
         m_logArea->append("Loaded example script from: " + scriptPath);
     } else {
         QMessageBox::warning(this, "Error", "Failed to open: " + scriptPath);

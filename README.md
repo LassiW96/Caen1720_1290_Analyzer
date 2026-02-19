@@ -20,11 +20,11 @@ This project provides:
 |---|---|---|
 | [CMake](https://cmake.org/) | 3.9+ | Build system |
 | [ROOT](https://root.cern/) | 6.30+ | **Do not use the snap package** — build from source or use the CERN apt repo |
-| [Qt6](https://www.qt.io/) | 6.x | Auto-installed via `apt` if not found (Ubuntu 20.04+) |
+| [Qt6](https://www.qt.io/) | 6.x | Auto-installed via `apt` if not found (Ubuntu 22.04+) |
 | [EVIO](https://github.com/JeffersonLab/evio) | 5.3 | Auto-fetched and built if not provided |
 | C++17 compiler | GCC 7+ / Clang 5+ | Required standard |
 
-### Quick install (Ubuntu 20.04+)
+### Quick install (Ubuntu 22.04+)
 
 ```bash
 # Qt6 (if not already installed)
