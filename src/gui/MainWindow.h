@@ -21,6 +21,7 @@ private slots:
   void browseInputFile();
   void browseOutputDir();
   void startDecode();
+  void startTdcDecode();
 
   // Analysis Tab Slots
   void browseAnalysisFile();
@@ -39,6 +40,7 @@ private:
   QLineEdit *m_inputFileEdit;
   QLineEdit *m_outputDirEdit;
   QPushButton *m_decodeBtn;
+  QPushButton *m_tdcDecodeBtn;
   QProgressBar *m_progressBar;
   QTextEdit *m_logArea;
 

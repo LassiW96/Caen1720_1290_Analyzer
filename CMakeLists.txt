@@ -106,6 +106,59 @@ if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
     )
 endif()
 
+# =============================
+# V1290 TDC Library
+# =============================
+set(V1290_HEADERS
+    V1290EvioDecode.h
+    V1290RootFileSetup.h
+)
+
+set(V1290_SOURCES
+    V1290EvioDecode.cxx
+    V1290RootFileSetup.cxx
+)
+
+add_library(V1290 SHARED ${V1290_SOURCES} ${V1290_HEADERS})
+
+target_include_directories(V1290 PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+ROOT_GENERATE_DICTIONARY(
+    V1290Dict
+    ${V1290_HEADERS}
+    MODULE V1290
+    LINKDEF V1290_LinkDef.h
+)
+
+target_link_libraries(V1290 PUBLIC
+    ROOT::Core
+    ROOT::RIO
+    ROOT::Tree
+    evio
+)
+
+set_target_properties(V1290 PROPERTIES
+    BUILD_RPATH_USE_ORIGIN TRUE
+)
+
+set_target_properties(V1290 PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
+)
+
+install(TARGETS V1290
+    LIBRARY DESTINATION lib
+)
+
+if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/libV1290_rdict.pcm"
+        "${CMAKE_CURRENT_BINARY_DIR}/libV1290.rootmap"
+        DESTINATION lib
+    )
+endif()
+
 # -----------------------------
 # GUI Application
 # -----------------------------
@@ -121,13 +174,14 @@ set(GUI_HEADERS
     src/gui/MainWindow.h
 )
 
-add_executable(V1720GUI ${GUI_SOURCES} ${GUI_HEADERS})
+add_executable(DecoderGUI ${GUI_SOURCES} ${GUI_HEADERS})
 
-target_link_libraries(V1720GUI PRIVATE
+target_link_libraries(DecoderGUI PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     V1720
+    V1290
     ROOT::Core
     ROOT::RIO
     ROOT::Tree
@@ -137,27 +191,29 @@ target_link_libraries(V1720GUI PRIVATE
 )
 
 # Enable MOC processing
-set_target_properties(V1720GUI PROPERTIES
+set_target_properties(DecoderGUI PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     AUTORCC ON
 )
 
 # Embed the source-tree path so the binary can always locate resources/temp_script.C
-target_compile_definitions(V1720GUI PRIVATE
+target_compile_definitions(DecoderGUI PRIVATE
     V1720_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 # Preserve runtime library paths so the installed binary can find Qt6/ROOT/EVIO libs
 # even when they live in non-standard locations (e.g. /opt/Qt/...)
-set_target_properties(V1720GUI PROPERTIES
+# $ORIGIN/../lib lets it find libV1720, libV1290, libevio in install/lib
+set_target_properties(DecoderGUI PROPERTIES
+    INSTALL_RPATH "$ORIGIN/../lib"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
-install(TARGETS V1720GUI
+install(TARGETS DecoderGUI
     RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY resources/
-    DESTINATION share/V1720/resources
+    DESTINATION share/DecoderGUI/resources
 )
