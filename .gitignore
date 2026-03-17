@@ -6,6 +6,7 @@ output/
 NotesOnThisProject.txt
 CMakeLists_old.txt
 testEviov2.cpp
+test_v1290.C
 
 # Data files
 *.root
@@ -14,3 +15,7 @@ testEviov2.cpp
 
 *.sh
 *.png
+
+
+# Workspaces
+*.code-workspace

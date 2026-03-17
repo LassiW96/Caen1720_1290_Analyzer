@@ -55,6 +55,7 @@ void V1720EvioDecode::decode()
     uint32_t *buf = nullptr;
     uint32_t bufLen = 0;
     int buffer_count = 0;
+    int skipped_count = 0;
 
     m_rootFileSetup->setupBranches();
 
@@ -70,8 +71,8 @@ void V1720EvioDecode::decode()
             findBank(eventStart, eventEnd, 1720);
 
         if (!adcPayload) {
-            cout << "Event " << buffer_count
-                 << ": Not a Payload Bank" << endl;
+            // cout << "Event " << buffer_count << ": Not a Payload Bank" << endl;
+            skipped_count++;
             free(buf);
             continue;
         }
@@ -155,6 +156,7 @@ void V1720EvioDecode::decode()
 
     cout << "\nFinished processing file: " << m_evioFile << endl;
     cout << "Total buffers processed: " << buffer_count << endl;
+    cout << "Skipped non-payload buffers: " << skipped_count << endl;
     cout << "-----------------------------------------------------\n" << endl;
 }
 
