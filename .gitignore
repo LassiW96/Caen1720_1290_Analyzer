@@ -13,7 +13,7 @@ test_v1290.C
 *.evio.*
 
 
-*.sh
+#*.sh
 *.png
 
 
