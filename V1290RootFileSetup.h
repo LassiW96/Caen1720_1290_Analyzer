@@ -6,14 +6,14 @@
 #include <TTree.h>
 
 struct V1290EventData {
-  Int_t eventNumber = 0;
-  Float_t delta_t_ch0_ch1 = 0; // (ch0 - ch1) in ns
-  Float_t delta_t_ch0_ch2 = 0; // (ch0 - ch2) in ns
+  uint32_t eventNumber = 0;
+  std::vector<uint32_t> hit_channels;
+  std::vector<Float_t> delta_t;
 
   void clear() {
     eventNumber = 0;
-    delta_t_ch0_ch1 = 0;
-    delta_t_ch0_ch2 = 0;
+    hit_channels.clear();
+    delta_t.clear();
   }
 };
 

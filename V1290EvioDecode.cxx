@@ -111,21 +111,26 @@ void V1290EvioDecode::decode() {
         hits.clear();
       } else if (datatype == TYPE_GLOBAL_TRAILER) {
         // End of a TDC event — compute delta-t and fill tree
-        if (hits.count(0) && (hits.count(1) || hits.count(2))) {
+        if (hits.count(0) && hits.size() > 1) {
           event_count++;
           m_rootFileSetup->m_event.clear();
           m_rootFileSetup->m_event.eventNumber = event_count;
 
-          if (hits.count(1)) {
-            int32_t dt_counts = hits[0] - hits[1];
-            m_rootFileSetup->m_event.delta_t_ch0_ch1 =
-                static_cast<Float_t>(dt_counts * kTdcResolutionPs / 1000.0);
-          }
+          int32_t t0 = hits[0]; // reference time
 
-          if (hits.count(2)) {
-            int32_t dt_counts = hits[0] - hits[2];
-            m_rootFileSetup->m_event.delta_t_ch0_ch2 =
-                static_cast<Float_t>(dt_counts * kTdcResolutionPs / 1000.0);
+          // Iterate through all hits in the event
+          for (const auto &hit : hits) {
+            int32_t ch = hit.first;
+            int32_t time = hit.second;
+
+            if (ch == 0)
+              continue;
+
+            int32_t dt_counts = t0 - time;
+
+            m_rootFileSetup->m_event.hit_channels.push_back(ch);
+            m_rootFileSetup->m_event.delta_t.push_back(
+                static_cast<float>(dt_counts * kTdcResolutionPs / 1000.0));
           }
 
           m_rootFileSetup->m_tree->Fill();

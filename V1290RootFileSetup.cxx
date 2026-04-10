@@ -9,8 +9,8 @@ V1290RootFileSetup::V1290RootFileSetup(const std::string &outputFileName,
 
 void V1290RootFileSetup::setupBranches() {
   m_tree->Branch("eventNumber", &m_event.eventNumber);
-  m_tree->Branch("delta_t_ch0_ch1", &m_event.delta_t_ch0_ch1);
-  m_tree->Branch("delta_t_ch0_ch2", &m_event.delta_t_ch0_ch2);
+  m_tree->Branch("hit_channels", &m_event.hit_channels);
+  m_tree->Branch("delta_t", &m_event.delta_t);
 }
 
 V1290RootFileSetup::~V1290RootFileSetup() = default;

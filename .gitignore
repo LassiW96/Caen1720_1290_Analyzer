@@ -1,12 +1,15 @@
 build/
 install/
 output/
+data/
+.cache/
 .vscode/
 .clangd
 NotesOnThisProject.txt
 CMakeLists_old.txt
 testEviov2.cpp
 test_v1290.C
+test_ti.C
 
 # Data files
 *.root

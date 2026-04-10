@@ -18,13 +18,14 @@
 #include <TROOT.h>
 #include <TSystem.h>
 
+#include "TIDecode.h"
 #include "V1290EvioDecode.h"
 #include "V1720EvioDecode.h"
 #include <iostream>
 #include <thread>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  setWindowTitle("Decoder GUI — ADC / TDC");
+  setWindowTitle("Decoder GUI — ADC / TDC / TI");
   resize(1000, 700);
   setupUi();
 
@@ -88,6 +89,12 @@ void MainWindow::setupDecodeTab() {
   connect(m_tdcDecodeBtn, &QPushButton::clicked, this,
           &MainWindow::startTdcDecode);
   decodeBtnLayout->addWidget(m_tdcDecodeBtn);
+
+  m_tiDecodeBtn = new QPushButton("Decode TI (ADC+TDC)");
+  m_tiDecodeBtn->setMinimumHeight(40);
+  connect(m_tiDecodeBtn, &QPushButton::clicked, this,
+          &MainWindow::startTiDecode);
+  decodeBtnLayout->addWidget(m_tiDecodeBtn);
 
   decodeLayout->addLayout(decodeBtnLayout);
 
@@ -203,8 +210,10 @@ void MainWindow::startDecode() {
   }
 
   m_decodeBtn->setEnabled(false);
+  m_tdcDecodeBtn->setEnabled(false);
+  m_tiDecodeBtn->setEnabled(false);
   m_progressBar->setVisible(true);
-  m_logArea->append("Starting decoding...");
+  m_logArea->append("Starting ADC decoding...");
 
   std::thread([this, inputFile, outputDir]() {
     try {
@@ -245,8 +254,11 @@ void MainWindow::startDecode() {
             }
 
             m_decodeBtn->setEnabled(true);
+            m_tdcDecodeBtn->setEnabled(true);
+            m_tiDecodeBtn->setEnabled(true);
             m_progressBar->setVisible(false);
-            QMessageBox::information(this, "Success", "Decoding Completed!");
+            QMessageBox::information(this, "Success",
+                                     "ADC Decoding Completed!");
           },
           Qt::QueuedConnection);
 
@@ -257,9 +269,11 @@ void MainWindow::startDecode() {
           [this, errorMsg]() {
             m_logArea->append("Error: " + errorMsg);
             m_decodeBtn->setEnabled(true);
+            m_tdcDecodeBtn->setEnabled(true);
+            m_tiDecodeBtn->setEnabled(true);
             m_progressBar->setVisible(false);
             QMessageBox::critical(this, "Error",
-                                  "Decoding Failed:\n" + errorMsg);
+                                  "ADC Decoding Failed:\n" + errorMsg);
           },
           Qt::QueuedConnection);
     }
@@ -277,6 +291,7 @@ void MainWindow::startTdcDecode() {
 
   m_tdcDecodeBtn->setEnabled(false);
   m_decodeBtn->setEnabled(false);
+  m_tiDecodeBtn->setEnabled(false);
   m_progressBar->setVisible(true);
   m_logArea->append("Starting TDC decoding...");
 
@@ -320,6 +335,7 @@ void MainWindow::startTdcDecode() {
 
             m_tdcDecodeBtn->setEnabled(true);
             m_decodeBtn->setEnabled(true);
+            m_tiDecodeBtn->setEnabled(true);
             m_progressBar->setVisible(false);
             QMessageBox::information(this, "Success",
                                      "TDC Decoding Completed!");
@@ -334,9 +350,89 @@ void MainWindow::startTdcDecode() {
             m_logArea->append("Error: " + errorMsg);
             m_tdcDecodeBtn->setEnabled(true);
             m_decodeBtn->setEnabled(true);
+            m_tiDecodeBtn->setEnabled(true);
             m_progressBar->setVisible(false);
             QMessageBox::critical(this, "Error",
                                   "TDC Decoding Failed:\n" + errorMsg);
+          },
+          Qt::QueuedConnection);
+    }
+  }).detach();
+}
+
+void MainWindow::startTiDecode() {
+  QString inputFile = m_inputFileEdit->text();
+  QString outputDir = m_outputDirEdit->text();
+
+  if (inputFile.isEmpty()) {
+    QMessageBox::warning(this, "Error", "Please select an input EVIO file.");
+    return;
+  }
+
+  m_tiDecodeBtn->setEnabled(false);
+  m_decodeBtn->setEnabled(false);
+  m_tdcDecodeBtn->setEnabled(false);
+  m_progressBar->setVisible(true);
+  m_logArea->append("Starting TI (combined ADC+TDC) decoding...");
+
+  std::thread([this, inputFile, outputDir]() {
+    try {
+      TIDecode decoder(inputFile.toStdString(), outputDir.toStdString());
+      decoder.decode();
+
+      QMetaObject::invokeMethod(
+          this,
+          [this, outputDir, inputFile]() {
+            m_logArea->append("TI decoding finished successfully.");
+
+            // Build output file path
+            std::filesystem::path p(inputFile.toStdString());
+            while (p.has_extension())
+              p = p.stem();
+            std::string outputFileName = p.string() + "_ti_decoded.root";
+            std::filesystem::path fullPath =
+                std::filesystem::path(outputDir.toStdString()) / outputFileName;
+            if (outputDir.isEmpty())
+              fullPath = outputFileName;
+
+            TFile *f = TFile::Open(fullPath.string().c_str(), "READ");
+            if (f && !f->IsZombie()) {
+              TTree *t = (TTree *)f->Get("ti");
+              if (t) {
+                m_logArea->append("\n--- TI Root File Branch Summary ---");
+                TObjArray *branches = t->GetListOfBranches();
+                for (int i = 0; i < branches->GetEntries(); ++i) {
+                  TBranch *b = (TBranch *)branches->At(i);
+                  m_logArea->append(QString("Branch: %1  (Title: %2)")
+                                        .arg(b->GetName())
+                                        .arg(b->GetTitle()));
+                }
+                m_logArea->append("------------------------------------\n");
+              }
+              f->Close();
+              delete f;
+            }
+
+            m_tiDecodeBtn->setEnabled(true);
+            m_decodeBtn->setEnabled(true);
+            m_tdcDecodeBtn->setEnabled(true);
+            m_progressBar->setVisible(false);
+            QMessageBox::information(this, "Success", "TI Decoding Completed!");
+          },
+          Qt::QueuedConnection);
+
+    } catch (const std::exception &e) {
+      QString errorMsg = QString::fromStdString(e.what());
+      QMetaObject::invokeMethod(
+          this,
+          [this, errorMsg]() {
+            m_logArea->append("Error: " + errorMsg);
+            m_tiDecodeBtn->setEnabled(true);
+            m_decodeBtn->setEnabled(true);
+            m_tdcDecodeBtn->setEnabled(true);
+            m_progressBar->setVisible(false);
+            QMessageBox::critical(this, "Error",
+                                  "TI Decoding Failed:\n" + errorMsg);
           },
           Qt::QueuedConnection);
     }

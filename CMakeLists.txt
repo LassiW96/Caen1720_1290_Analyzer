@@ -159,6 +159,56 @@ if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
     )
 endif()
 
+# =============================
+# TI Combined Library (ADC+TDC)
+# =============================
+set(TI_HEADERS
+    TIDecode.h
+    TIRootFileSetup.h
+)
+
+set(TI_SOURCES
+    TIDecode.cxx
+    TIRootFileSetup.cxx
+)
+
+add_library(TI SHARED ${TI_SOURCES} ${TI_HEADERS})
+
+target_include_directories(TI PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+ROOT_GENERATE_DICTIONARY(
+    TIDict
+    ${TI_HEADERS}
+    MODULE TI
+    LINKDEF TI_LinkDef.h
+)
+
+target_link_libraries(TI PUBLIC
+    ROOT::Core
+    ROOT::RIO
+    ROOT::Tree
+    evio
+)
+
+set_target_properties(TI PROPERTIES
+    BUILD_RPATH_USE_ORIGIN TRUE
+    INSTALL_RPATH "$ORIGIN"
+)
+
+install(TARGETS TI
+    LIBRARY DESTINATION lib
+)
+
+if(ROOT_VERSION VERSION_GREATER_EQUAL 6.0)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/libTI_rdict.pcm"
+        "${CMAKE_CURRENT_BINARY_DIR}/libTI.rootmap"
+        DESTINATION lib
+    )
+endif()
+
 # -----------------------------
 # GUI Application
 # -----------------------------
@@ -182,6 +232,7 @@ target_link_libraries(DecoderGUI PRIVATE
     Qt6::Widgets
     V1720
     V1290
+    TI
     ROOT::Core
     ROOT::RIO
     ROOT::Tree
